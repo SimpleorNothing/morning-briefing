@@ -1,1 +1,24 @@
+name: 모닝 브리핑
 
+on:
+  schedule:
+    - cron: '5 22 * * *'
+  workflow_dispatch:
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 패키지 설치
+        run: pip install yfinance requests anthropic pytz
+      - name: 모닝 브리핑 실행
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+          NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
+        run: python scripts/morning_briefing.py

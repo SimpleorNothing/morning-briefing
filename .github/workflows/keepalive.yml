@@ -1,0 +1,38 @@
+name: 예약 워크플로 비활성화 방지
+
+on:
+  schedule:
+    # 매월 1일 09:17 KST (00:17 UTC)
+    - cron: '17 0 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scheduled-workflow-keepalive
+  cancel-in-progress: false
+
+jobs:
+  record-activity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 활동 기록 갱신
+        run: |
+          mkdir -p .github
+          date -u +'%Y-%m-%dT%H:%M:%SZ' > .github/scheduled-workflow-keepalive.txt
+
+      - name: 변경사항 커밋
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/scheduled-workflow-keepalive.txt
+          if git diff --cached --quiet; then
+            echo '갱신할 변경사항이 없습니다.'
+            exit 0
+          fi
+          git commit -m 'chore: refresh scheduled workflow activity'
+          git push
